@@ -1,11 +1,42 @@
 let pyodide = null;
 let regexPattern = '';
 let dfaChecker = null;
+let loadingStatus = document.getElementById("loading-status");
+let convertButton = document.getElementById("convert-btn");
 
+convertButton.disabled = true;
 async function loadPyodideAndPackages() {
-  pyodide = await loadPyodide();
-  const code = await (await fetch("rgxtodfa.py")).text();
-  await pyodide.runPythonAsync(code);
+  try {
+    loadingStatus.innerHTML = `
+      <div class="spinner"></div>
+      <p>Loading Python interpreter...</p>
+    `;
+
+    pyodide = await loadPyodide();
+
+    loadingStatus.innerHTML = `
+      <div class="spinner"></div>
+      <p>Loading required packages...</p>
+    `;
+
+    const code = await (await fetch("rgxtodfa.py")).text();
+    await pyodide.runPythonAsync(code);
+
+    loadingStatus.innerHTML = `
+      <p>✓ Python interpreter ready</p>
+    `;
+    loadingStatus.classList.add("ready");
+
+    convertButton.disabled = false;
+  } catch (error) {
+    loadingStatus.innerHTML = `
+      <p>❌ Error loading Python interpreter: ${error.message}</p>
+    `;
+    loadingStatus.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
+    loadingStatus.style.borderColor = "rgba(239, 68, 68, 0.2)";
+    loadingStatus.style.color = "var(--error)";
+    console.error("Failed to load Pyodide:", error);
+  }
 }
 
 loadPyodideAndPackages();
@@ -86,4 +117,3 @@ document.querySelectorAll(".example-btn").forEach(btn => {
     document.getElementById("regex-input").value = btn.dataset.pattern;
   });
 });
-
